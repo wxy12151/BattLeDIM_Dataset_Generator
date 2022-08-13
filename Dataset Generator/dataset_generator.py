@@ -16,8 +16,9 @@ from math import sqrt
 
 # Read input arguments from yalm file
 try:
-    with open(f'{os.getcwd()}\\dataset_configuration.yalm', 'r') as f:
-        leak_pipes = yaml.load(f.read())
+    with open('./dataset_configuration.yalm','r') as f:
+        print('f', f)
+        leak_pipes = yaml.load(f.read(),Loader=yaml.FullLoader)
 except:
     print('"dataset_configuration" file not found.')
     sys.exit()
@@ -29,7 +30,7 @@ leakages = leakages[1:]
 number_of_leaks = len(leakages)
 inp_file = leak_pipes['Network']['filename']
 print(f'Run input file: "{inp_file}"')
-results_folder = f'{os.getcwd()}\\Results\\'
+results_folder = f'{os.getcwd()}/Results'
 pressure_sensors = leak_pipes['pressure_sensors']
 
 def get_sensors(leak_pipes, field):
@@ -60,7 +61,7 @@ class LeakDatasetCreator:
         self.wn = wntr.network.WaterNetworkModel(inp_file)
 
         for name, node in self.wn.junctions():
-            node.nominal_pressure = 25
+            node.required_pressure = 25
             #print(node.nominal_pressure)
             #print(node.minimum_pressure)
 
@@ -153,7 +154,7 @@ class LeakDatasetCreator:
                 pattern_name = f'{str(leak_node[leak_i])}'
                 self.wn.add_pattern(pattern_name, pattern_array)
                 leak_node[leak_i].demand_timeseries_list[0].pattern_name = pattern_name
-                leak_node[leak_i].nominal_pressure = nominal_pres
+                leak_node[leak_i].required_pressure = nominal_pres
                 leak_node[leak_i].minimum_pressure = 0
 
                 # save times of leak
@@ -184,7 +185,7 @@ class LeakDatasetCreator:
                 leak_peak_time[leak_i] = self.time_stamp[PT]._date_repr + ' ' + self.time_stamp[PT]._time_repr
 
         # Save/Write input file with new settings
-        leakages_folder = f'{results_folder}Leakages'
+        leakages_folder = f'{results_folder}/Leakages'
         self.create_folder(leakages_folder)
         #self.wn.write_inpfile(f'{leakages_folder}\\{self.inp}_with_leaknodes.inp')
 
@@ -193,7 +194,7 @@ class LeakDatasetCreator:
             pickle.dump(self.wn, f)
 
         # Run wntr simulator
-        sim = wntr.sim.WNTRSimulator(self.wn, mode=Mode_Simulation)
+        sim = wntr.sim.WNTRSimulator(self.wn)
         results = sim.run_sim()
         if results.node["pressure"].empty:
             print("Negative pressures.")
@@ -225,7 +226,7 @@ class LeakDatasetCreator:
                 #self.create_csv_file(leaks, self.time_stamp, 'Description', f'{leakages_folder}\\Leak_{str(leak_node[leak_i])}_demand.csv')
                 df1 = pd.DataFrame(totals_info)
                 df2 = pd.DataFrame(total_Leaks)
-                writer = pd.ExcelWriter(f'{leakages_folder}\\Leak_{NODEID}.xlsx', engine='xlsxwriter')
+                writer = pd.ExcelWriter(f'{leakages_folder}/Leak_{NODEID}.xlsx', engine='xlsxwriter')
                 df1.to_excel(writer, sheet_name='Info', index=False)
                 df2.to_excel(writer, sheet_name='Demand (m3_h)', index=False)
                 writer.save()
@@ -274,7 +275,7 @@ class LeakDatasetCreator:
             df3 = pd.DataFrame(total_flows)
             df4 = pd.DataFrame(total_levels)
             # Create a Pandas Excel writer using XlsxWriter as the engine.
-            writer = pd.ExcelWriter(f'{results_folder}Measurements.xlsx', engine='xlsxwriter')
+            writer = pd.ExcelWriter(f'{results_folder}/Measurements.xlsx', engine='xlsxwriter')
 
             # Convert the dataframe to an XlsxWriter Excel object.
             # Pressures (m), Demands (m^3/h), Flows (m^3/h), Levels (m)
